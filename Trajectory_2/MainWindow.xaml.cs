@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Trajectory_2
 {
@@ -21,6 +22,63 @@ namespace Trajectory_2
     /// </summary>
     public partial class MainWindow : Window
     {
+        private DispatcherTimer timer = new DispatcherTimer();
+        private void OnTimer(Object sender, EventArgs args) 
+        {
+            if (coords_y >= 0)
+            {
+                coords_x = coords_x + steps * speedx;
+                graph_x = actual_width + 1000 * coords_x;
+                speedx = speedx - steps * resistance_force * speedx;
+                coords_y = coords_y + steps * speedy;
+                graph_y = actual_height - 1000 * coords_y;
+                speedy = speedy - steps * (g + resistance_force * speedy);
+                if (coords_y <= 0 && speed != 0)
+                {
+                    graph_y = actual_height;
+                    polyline.Points.Add(new Point(graph_x, graph_y));
+                    Canvas.SetLeft(ellipse, polyline.Points.Last().X - ellipse.Width / 2.0);
+                    Canvas.SetTop(ellipse, polyline.Points.Last().Y - ellipse.Height / 2.0);
+                    Distance_TextBlock.Text = Convert.ToString(coords_x);
+                    timer.Stop();
+                } 
+                else
+                {
+                    polyline.Points.Add(new Point(graph_x, graph_y));
+                    Canvas.SetLeft(ellipse, polyline.Points.Last().X - ellipse.Width / 2.0);
+                    Canvas.SetTop(ellipse, polyline.Points.Last().Y - ellipse.Height / 2.0);
+                    if (polyline.Points.Count == 1)
+                    {
+                        ellipse.Stroke = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+                        ellipse.Fill = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+                    }
+                    if (speed == 0)
+                    {
+                        speedx = starting_speed * Math.Cos(angle);
+                        speedy = starting_speed * Math.Sin(angle);
+                    }
+                    speed = Math.Sqrt(speedx * speedx + speedy * speedy);
+                    Calculation_the_resistance_force(speed);
+                }
+
+            }
+            else
+            {
+                graph_y = actual_height;
+                polyline.Points.Add(new Point(graph_x, graph_y));
+                Canvas.SetLeft(ellipse, polyline.Points.Last().X - ellipse.Width / 2.0);
+                Canvas.SetTop(ellipse, polyline.Points.Last().Y - ellipse.Height / 2.0);
+                Distance_TextBlock.Text = Convert.ToString(coords_x);
+                timer.Stop();
+            }
+            
+        }
+
+        double actual_width, actual_height;
+
+        double speed, speedx, speedy;
+
+        double coords_x, coords_y, graph_x, graph_y;
         double distance, time, max_height = 0;
         private static readonly Regex _regex = new Regex("[^0-9,]");
         private static bool IsTextAllowed(string text)
@@ -71,16 +129,28 @@ namespace Trajectory_2
             Calculation_the_resistance_force(starting_speed);
         }
 
+        private void clear()
+        {
+            speed = speedx = speedy = 0;
+            coords_x = coords_y = 0;
+            ellipse.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            ellipse.Fill = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+        }
         private void Output()
         {
             Input();
-            CountingcCordinates();
+            polyline.Points.Clear();
+            actual_width = canvas.ActualWidth / 2;
+            actual_height = canvas.ActualHeight / 2;
+            clear();
+            timer.Start();
+            //CountingcCordinates();
             Distance_TextBlock.Text = Convert.ToString(distance);
             Time_TextBlock.Text = Convert.ToString(time);
             MaxHeight_Textblock.Text = Convert.ToString(max_height);
         }
 
-        void Calculation_the_resistance_force(double speed)
+        private void Calculation_the_resistance_force(double speed)
         {
             resistance_force = drag_coefficient * medium_density * speed * speed / 2
                     * Math.PI * body_radius * body_radius;
@@ -120,6 +190,8 @@ namespace Trajectory_2
         public MainWindow()
         {
             InitializeComponent();
+            timer.Tick += new EventHandler(OnTimer);
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 100);
         }
     }
 }

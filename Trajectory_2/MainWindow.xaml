@@ -100,9 +100,19 @@
             Grid.Row="6" Margin="1.2,41.4,8.4,41.4" Grid.RowSpan="3">
         </TextBlock>
 
-        <Canvas
+        <Canvas x:Name="canvas"
             Grid.Column="2"
-            Grid.RowSpan="9" Margin="0.6,42,-0.4,41.4"/>
+            Grid.RowSpan="9" Margin="0.6,42,-0.4,41.4">
+            <Polyline x:Name ="polyline"
+                Stroke="Black">
+            </Polyline>
+            <Ellipse x:Name="ellipse"
+                Stroke="White"
+                Height="10"
+                Width="10">
+            </Ellipse>
+        </Canvas>
+        
 
 
     </Grid>
